@@ -2,11 +2,11 @@
 type push_value = Int of int | String of string | Name of string |
 Bool of bool | Error | Unit
 
-type op_value = Pop | Add | Sub | Mul | Div | Rem | Neg | Swap | Cat | And | Or | Not | Bind
+type op_value = Pop | Add | Sub | Mul | Div | Rem | Neg | Swap | Cat | And | Or | Not | Lessthan | Equal | Bind 
 
 type bind_value = push_value * push_value 
 
-type stack_value = P of push_value | O of op_value | B of bind_value | Quit
+type stack_value = P of push_value | O of op_value | Quit
 
 (*Determines the operator on the line*)
 let detOp (s: string) : stack_value = 
@@ -20,10 +20,12 @@ let detOp (s: string) : stack_value =
   | "neg" -> O Neg
   | "swap"-> O Swap
   | "cat" -> O Cat
-  | "And" -> O And
+  | "and" -> O And
   | "or"  -> O Or
   | "not" -> O Not
   | "bind"-> O Bind
+  | "lessThan" -> O Lessthan
+  | "equal" -> O Equal
   | "quit"-> Quit
   | _ -> Quit
 
@@ -175,6 +177,20 @@ let myNot val1 : push_value list =
                 | false -> (Bool true)::[])
   | _ -> Error::val1::[]
 
+let lessThan val1 val2 : push_value list =
+  match val1 with
+  | Int i1 -> (match val2 with
+               | Int i2 -> (Bool (i2 < i1))::[]
+               | _ -> Error::val1::val2::[])
+  | _ -> Error::val1::val2::[]
+
+let equali val1 val2 : push_value list =
+  match val1 with
+  | Int i1 -> (match val2 with
+               | Int i2 -> Bool (i1 == i2)::[]
+               | _ -> Error::val1::val2::[])
+  | _ -> Error::val1::val2::[]
+
 (*Performs whatever operation is being given*)
 let performCalc fileVals oper : push_value list=
   match oper with
@@ -223,6 +239,15 @@ let performCalc fileVals oper : push_value list=
   | Not -> (match fileVals with
            | hd::tl -> (myNot hd)@tl
            | [] -> Error::[])
+  | Lessthan -> (match fileVals with
+                 | hd::nk::tl -> (lessThan hd nk)@tl
+                 | hd::[] -> Error::hd::[]
+                 | [] -> Error::[])
+  | Equal -> (match fileVals with
+               | hd::nk::tl -> (equali hd nk)@tl
+               | hd::[] -> Error::hd::[]
+               | [] -> Error::[])
+  | Bind -> []
 
 (*Used to create a stack of fileVals to be printed onto the outfile*)
 let rec calculate (stack: stack_value list) (newList: push_value list) =
@@ -276,22 +301,3 @@ let interpreter ((input : string), (output : string)) : unit =
     let printerStack = calculate stack [] in
 
     printToFile printerStack; close_out oc
-
-    
-    
-
-
-
-
-    
-
-
-
-
-  
-  
-
-
-
-
-  
